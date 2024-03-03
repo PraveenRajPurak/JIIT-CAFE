@@ -1,0 +1,21 @@
+config:
+  payload:
+    path: "./users.csv"
+    fields:
+      - "enrollmentNo"
+      - "password"
+  target: 'http://192.168.1.104:3000'
+  phases:
+    - duration: 1
+      arrivalRate: 221
+scenarios:
+  - name: 'Signin'
+    flow:
+      - post:
+              url: '/auth/signin'
+              json:
+                enrollmentNo: '{{ enrollmentNo }}'
+                password: '{{ password }}'
+      - log: 'Response: {{ enrollmentNo }}'
+
+
