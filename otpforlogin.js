@@ -6,6 +6,7 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 //import { BottomTab } from './components/bottomTab';
+import { useUser } from './userContext';
 
 export default function OtpforLogin() {
 
@@ -14,6 +15,17 @@ export default function OtpforLogin() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [code, setCode] = useState("");
   const [confirm, setConfirm] = useState(null);
+  const [enrollmentNo, setEnrollmentNo] = useState('');
+  const [password, setPassword] = useState('');
+
+  function truncateText(text, maxLength) {
+    if (text.length > maxLength) {
+      return text.substring(0, maxLength);
+    }
+    return text;
+  }
+
+  const { updateUser } = useUser();
 
   const signInWithPhoneNumber = async () => {
     try {
@@ -34,7 +46,47 @@ export default function OtpforLogin() {
       //check if user already exists or not
       const userDocument = await firestore().collection('users').doc(user.uid).get();
       if (userDocument.exists) {
-        navigation.navigate("LoginCopy");
+        console.log('User already exists with the following data ', userDocument.data());
+        
+        setEnrollmentNo(userDocument.data().enrollmentNo)
+        .then(() => setPassword(userDocument.data().password))
+        .then(async () => {
+          // Now you can log the values
+          console.log('enrollmentNo: ', enrollmentNo);
+          console.log('password: ', password);
+
+        try {
+          const userResponse = await fetch('http://192.168.177.64:3000/auth/signin', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              enrollmentNo,
+              password,
+            }),
+          });
+
+          console.log('User Response:', userResponse); // Log the raw response
+
+          const userData = await userResponse.json();
+          console.log('User Data:', userData); // Log the parsed response
+
+          if (userResponse.ok) {
+            updateUser(userData); // Update the user context with the user data
+            navigation.navigate('food');
+
+          } else {
+           // Alert.alert('Error', 'Incorrect user credentials. Please try again.');
+           console.log('Error. Incorrect user credentials. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error signing in:', error);
+          // Handle other errors as needed
+        }})
+
+        .catch(error => console.error('Error setting values: ', error));
+
       }
 
       else {
@@ -120,7 +172,7 @@ export default function OtpforLogin() {
           {!confirm ? (
             <>
               <View style={[styles.fields, { bottom: 132, right: 30, }]} overflow='hidden' >
-                <TextInput style={{ color: 'black', fontSize: 20, opacity: 1, fontWeight: '500',textAlign:'center' }}
+                <TextInput style={{ color: 'black', fontSize: 20, opacity: 1, fontWeight: '500', textAlign: 'center' }}
                   keyboardType="string"
                   placeholder='Phone Number with +91'
                   placeholderTextColor='black'

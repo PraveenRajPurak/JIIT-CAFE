@@ -8,10 +8,11 @@ import PendingOrders from '../models/pendingOrders.mjs';
 import authenticateToken from '../middleware/auth.mjs';
 import crypto from 'crypto';
 const router = express.Router();
+import Stock from '../models/stock.mjs';
 
 // Function to generate a random alphanumeric string
 const generateRandomString = (length) => {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const characters = '0123456789';
   const randomString = Array.from(crypto.randomFillSync(new Uint8Array(length)))
     .map((byte) => characters[byte % characters.length])
     .join('');
@@ -88,6 +89,7 @@ router.post('/signin', async (req, res) => {
 router.post('/placeorder', authenticateToken, async (req, res) => {
   const userId = req.user.userId;
   console.log('User ID:', userId);
+  const orderId = generateRandomString(5);
 
   try {
     const user = await User.findById(userId);
@@ -96,7 +98,13 @@ router.post('/placeorder', authenticateToken, async (req, res) => {
       const { selectedItems } = req.body;
       console.log(selectedItems);
 
-      const orderId = generateRandomString(5);
+
+      const totalJcoins = selectedItems.reduce((sum, item) => sum + item.coinCount * item.count, 0);
+
+      user.jCoins -= totalJcoins;
+
+      await user.save();
+
 
       const newOrderForUser = {
         orderId: orderId,
@@ -110,6 +118,14 @@ router.post('/placeorder', authenticateToken, async (req, res) => {
           key: item.key,
         })),
       };
+
+      for (const item of selectedItems) {
+        const stockItem = await Stock.findOne({ itemid: item.id });
+        if (stockItem) {
+          stockItem.quantity -= item.count;
+          await stockItem.save();
+        }
+      }
 
       const updatedUser = await User.findByIdAndUpdate(
         userId,
@@ -135,26 +151,67 @@ router.post('/placeorder', authenticateToken, async (req, res) => {
 
       await PendingOrders.create(newOrderForPendingOrdersCollection);
 
-      setTimeout(async () => {
-        await FailedOrders.create(newOrderForPendingOrdersCollection);
+      res.status(201).json({ message: 'Order placed successfully' });
 
-        await PendingOrders.findOneAndDelete({ orderId: orderId });
-
-        await User.findByIdAndUpdate(userId, {
-          $pull: { pendingOrders: { orderId: orderId } },
-          $push: { failedOrders: newOrderForUser },
-        });
-      }, 15 * 60 * 1000); 
-
-      res.status(200).json(updatedUser);
-    } else {
-      res.status(404).json({ error: 'User not found' });
+    /*setTimeout(async () => {
+      await handleTimeout(userId, orderId);
+      }, 20 * 1000);*/
     }
   } catch (error) {
     console.error('Error placing order:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+
+const handleTimeout = async (userId, orderId) => {
+  try {
+    const user = await User.findById(userId);
+    console.log('Updating after 15 mins:', user);
+    
+
+    const orderInPendingOrders = await PendingOrders.findOne({ orderId: orderId });
+    const orderInUser = user.pendingOrders.find(order => order.orderId === orderId);
+
+    if (orderInPendingOrders) {
+
+      for (const item of orderInPendingOrders.items) {
+        const stockItem = await Stock.findOne({ itemid: item.id });
+        if (stockItem) {
+          stockItem.quantity += item.count;
+          await stockItem.save();
+        }
+      }
+
+      user.jCoins += orderInPendingOrders.items.reduce((sum, item) => sum + item.coinCount * item.count, 0);
+
+
+
+
+      user.jCoins += orderInPendingOrders.items.reduce((sum, item) => sum + item.coinCount * item.count, 0);
+
+      await FailedOrders.create(orderInPendingOrders);
+      user.failedOrders.push(orderInUser);
+      user.pendingOrders = user.pendingOrders.filter(order => order.orderId !== orderId);
+
+      await PendingOrders.findOneAndDelete({ orderId: orderId });
+
+      await User.findOneAndUpdate(
+        { _id: userId, __v: user.__v },
+        { $set: user },
+        { new: true }
+      );
+
+      console.log('Order moved to failedOrders');
+      console.log('Updated user:', user);
+
+    }
+  } catch (error) {
+    console.error('Error handling timeout:', error);
+  }
+};
+
+
 
 
 
@@ -247,7 +304,10 @@ router.get('/alluserorders', authenticateToken, async (req, res) => {
       ...user.successfulOrders.map(order => ({ ...order.toObject(), status: 'successful' })),
     ];
 
+    allOrders.sort((a, b) => b.orderDate - a.orderDate || a.orderTime.localeCompare(b.orderTime));
+
     console.log('All orders:', allOrders);
+
 
     res.json(allOrders);
   } catch (error) {

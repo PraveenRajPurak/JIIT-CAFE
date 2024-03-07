@@ -1,145 +1,219 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, ScrollView, TouchableOpacity } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, TouchableOpacity, ImageBackground } from 'react-native';
 import { StyleSheet, Text, View, SafeAreaView, Image, TextInput } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { BottomTabAdmin } from './components/bottomTabAdmin.js';
+import { NativeBaseProvider } from 'native-base';
+import RechargePopup from './rechargePopup.js';
 
 
 export default function RechargeMain() {
-
-  function truncateText(text, maxLength) {
-        if (text.length > maxLength) {
-           return text.substring(0, maxLength) ;
-         }
-         return text;
-  }
-
+  const route = useRoute();
+  const userData = route.params?.userData;
   const navigation = useNavigation();
 
+  const [isOrderPlacedPopupVisible, setOrderPlacedPopupVisible] = useState(false);
+ 
 
-  const [storedButton, setStoredButton] = useState(null);
-
-  const handleButtonPress = () => {
-    
-    const buttonInfo = {
-      text: '100',
-      imagePath: require('./jiitcafeassests/jcoins.png'), 
+  /*
+    function truncateText(text, maxLength) {
+      if (text.length > maxLength) {
+        return text.substring(0, maxLength);
+      }
+      return text;
+    }
+  
+    const navigation = useNavigation();
+  
+  
+    const [storedButton, setStoredButton] = useState(null);
+    const [walletValue,setWalletValue] = useState(0);
+  
+    const handleButtonPress = () => {
+  
+      const buttonInfo = {
+        text: '100',
+        imagePath: require('./jiitcafeassests/jcoins.png'),
+      };
+      setStoredButton(buttonInfo);
     };
-    setStoredButton(buttonInfo);
+  
+    const availableCoinsCount = 0;
+    // Path to your coins image (replace 'path-to-your-image' with your actual image path)
+    
+  
+    //const [enrollmentNo, getEnrollmentNo] = useState('');
+  
+    const handleButton = (newText) => {
+      newText = truncateText(newText, 10);
+      if(newText%100 !== 0){
+        alert("Please enter a multiple of 100");
+        return;
+      }
+      //getEnrollmentNo(newText);
+    };*/
+
+  const topUpWallet = async () => {
+    try {
+      const response = await fetch('http://192.168.177.64:3000/adminAuth/rechargeJCoins', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          enrollmentNo: userData.enrollmentNo,
+          amount: parseInt(walletValue), 
+        }),
+      });
+
+      if (response.ok) {
+        // JCoins recharge successful
+        const updatedUserData = await response.json();
+        console.log('User Details after recharge:', updatedUserData);
+
+        setOrderPlacedPopupVisible(true);
+
+        setTimeout(() => {
+          setOrderPlacedPopupVisible(false);
+          //{ showTokenPopup: true };
+          navigation.navigate('recharge');
+        }, 6000);
+
+      } else {
+        console.log('Error from server:', response.status);
+        // Handle error cases
+      }
+    } catch (error) {
+      console.error('Error recharging JCoins:', error);
+      // Handle other errors as needed
+    }
   };
 
-  const availableCoinsCount = 0;
-  // Path to your coins image (replace 'path-to-your-image' with your actual image path)
+  const [walletValue, setWalletValue] = useState(0);
+  const [availableBalance, setAvailableBalance] = useState(0);
+
+  function handleButtonPress(amount) {
+    // setWalletValue(amount);
+    setWalletValue((prevBalance) => {
+      return parseInt(prevBalance) + parseInt(amount);
+    });
+  };
+
+
   const coinsImagePath = require('./jiitcafeassests/jcoins.png');
 
-  const [enrollmentNo, getEnrollmentNo] = useState('');
+  const handleRecharge = () => {
+    if (walletValue % 100 !== 0) {
+      alert('Please enter a multiple of 100');
+      return;
+    }
 
-  const enrollmentNum = (newText) => {
-    newText = truncateText(newText, 10);
-    getEnrollmentNo(newText);
+    setAvailableBalance((prevBalance) => prevBalance + parseInt(walletValue));
+
+    // Reset walletValue after recharge
+    setWalletValue(0);
   };
 
   return (
     <KeyboardAvoidingView
-    style={{ flex: 1 }}
-    behavior='height'
-    keyboardShouldPersistTaps='always' // handle taps outside TextInput
-    keyboardVerticalOffset={-500}
+      style={{ flex: 1 }}
+      behavior='height'
+      keyboardShouldPersistTaps='always'
+      keyboardVerticalOffset={-500}
     >
-    
-    <SafeAreaView style={styles.container} keyboardShouldPersistTaps='always'>
-    <Image
-            source={require('./jiitcafeassests/cafelogo.png')} 
-            style={{ width: 60, height: 60, position:'absolute', top: 35, left: 10 }} // Adjust the dimensions as needed
-    />
-        
-          <Text style={{fontSize: 19, fontWeight: 'bold', position:'absolute', textAlign: 'left', left:74 ,top:55, color: 'black'}}>
-            JIIT CAFE
-          </Text>
+      {isOrderPlacedPopupVisible && (
+        <RechargePopup isVisible={isOrderPlacedPopupVisible} onClose={() => setOrderPlacedPopupVisible(false)} />
+      )}
+      <ImageBackground source={require('./jiitcafeassests/mainbg.png')} style={styles.container} keyboardShouldPersistTaps='always'>
+        <Image
+          source={require('./jiitcafeassests/cafelogo.png')}
+          style={{ width: 60, height: 60, position: 'absolute', top: 35, left: 10 }}
+        />
 
-<View style={styles.roundedBox} keyboardShouldPersistTaps='always'>
+        <Text style={{ fontSize: 19, fontWeight: 'bold', position: 'absolute', textAlign: 'left', left: 74, top: 55, color: 'black' }}>
+          JIIT CAFE
+        </Text>
 
-<Text style={{position: 'absolute', top: 45, left: 22,fontSize: 20, fontWeight: 500}}>Aditya</Text>
+        <View style={styles.roundedBox} keyboardShouldPersistTaps='always'>
 
+          <Text style={{ position: 'absolute', top: 45, left: 22, fontSize: 20, fontWeight: 500 }}>{userData.name}</Text>
+          <Text style={{ position: 'absolute', top: 78, left: 22, fontSize: 20, fontWeight: 500 }}>{userData.enrollmentNo}</Text>
 
-<Text style={{position: 'absolute', top: 78, left: 22,fontSize: 20, fontWeight: 500}}>9921103219</Text>
+          <View
+            style={{
+              borderBottomColor: 'black',
+              borderBottomWidth: 0.5,
+              width: '90%',
+              top: -50
+            }}
+          />
 
+          <Text style={{ position: 'absolute', top: 120, left: 22, fontSize: 17, fontWeight: 400 }}>Available Balance</Text>
 
-<View
-      style={{
-        borderBottomColor: 'black', // Change this to your desired line color
-        borderBottomWidth: 0.5, // Adjust the width of the line
-        width: '90%', // Adjust the width of the line
-        top: -50
-        //marginVertical: 10, // Add margin top and bottom as needed
-      }}
-    />
+          <View style={styles.container2}>
+            <Image source={coinsImagePath} style={styles.coinImage} />
+            <Text style={styles.coinCount}>{userData.jCoins}</Text>
+          </View>
 
-<Text style={{position: 'absolute', top: 120, left: 22,fontSize: 17, fontWeight: 400}}>Available Balance</Text>
+          <View
+            style={{
+              borderBottomColor: 'black', // Change this to your desired line color
+              borderBottomWidth: 0.5, // Adjust the width of the line
+              width: '90%', // Adjust the width of the line
+              top: -38
+              //marginVertical: 10, // Add margin top and bottom as needed
+            }}
+          />
 
-<View style={styles.container2}>
-      <Image source={coinsImagePath} style={styles.coinImage} />
-      <Text style={styles.coinCount}>{availableCoinsCount}</Text>
-    </View>
+          <Text style={{ position: 'absolute', top: 215, left: 22 }}>Topup Wallet</Text>
 
-<View
-      style={{
-        borderBottomColor: 'black', // Change this to your desired line color
-        borderBottomWidth: 0.5, // Adjust the width of the line
-        width: '90%', // Adjust the width of the line
-        top: -38
-        //marginVertical: 10, // Add margin top and bottom as needed
-      }}
-    />
+          <View style={[styles.fields, { bottom: 200, right: 30, }]} overflow='hidden' >
+            <TextInput style={{ color: 'black', right: 60, }}
+              keyboardType="numeric"
+              placeholder='Enter the Amount'
+              placeholderTextColor='black'
+              onChangeText={(text) => setWalletValue(text)}
+              value={walletValue} />
+          </View>
 
-<Text style={{position: 'absolute', top: 215, left: 22}}>Topup Wallet</Text>
+          <View style={{ flexDirection: 'row' }}>
+            <TouchableOpacity onPress={() => handleButtonPress(100)} style={[styles.button, { left: -40 }]}>
+              <Text style={styles.buttonText}>100</Text>
+              <Image
+                source={require('./jiitcafeassests/jcoins.png')}
+                style={styles.buttonImage}
+              />
+            </TouchableOpacity>
 
-<View style={[styles.fields, {bottom:200, right: 30,}]} overflow = 'hidden' >
-  <TextInput style={{color: 'white', right: 60, }}
-             keyboardType="numeric"
-             placeholder='Enter the Amount' 
-             placeholderTextColor= 'white' 
-             onChangeText={enrollmentNum} 
-             value={enrollmentNo} />
-</View>
+            <TouchableOpacity onPress={() => handleButtonPress(200)} style={[styles.button, { left: -20 }]}>
+              <Text style={styles.buttonText}>200</Text>
+              <Image
+                source={require('./jiitcafeassests/jcoins.png')}
+                style={styles.buttonImage}
+              />
+            </TouchableOpacity>
 
-<View style ={{flexDirection: 'row'}}>
-<TouchableOpacity onPress={handleButtonPress} style={[styles.button,{left: -40}]}>
-      <Text style={styles.buttonText}>100</Text>
-      <Image
-        source={require('./jiitcafeassests/jcoins.png')} 
-        style={styles.buttonImage}
-      />
-</TouchableOpacity>
+          </View>
 
-<TouchableOpacity onPress={handleButtonPress} style={[styles.button,{left: -20}]}>
-      <Text style={styles.buttonText}>200</Text>
-      <Image
-        source={require('./jiitcafeassests/jcoins.png')} 
-        style={styles.buttonImage}
-      />
-</TouchableOpacity>
-
-</View>
-
-<TouchableOpacity 
-           style={[styles.roundedBox, 
-           {width: 320, height:60, backgroundColor:'#7762D2',bottom:30,top: 370}]} 
-           //onPress={() => navigation.navigate('food')}
-    >    
-    <Text style={{color: 'white', alignItems:'center', fontSize: 20 }} >Proceed to Topup</Text>
-
-</TouchableOpacity>
+          <TouchableOpacity
+            onPress={topUpWallet}
+            style={[styles.roundedBox,
+            { width: 320, height: 60, backgroundColor: '#FBA834', bottom: 30, top: 370, borderColor: 'transparent' }]}
+          >
+            <Text style={{ color: 'white', alignItems: 'center', fontSize: 20 }} >Proceed to Topup</Text>
+          </TouchableOpacity>
 
 
 
-</View>
+        </View>
+        <StatusBar style="auto" />
+        <NativeBaseProvider>
 
-    <StatusBar style="auto" />
-    <BottomTabAdmin focussedIndex={0} />
-    </SafeAreaView></KeyboardAvoidingView>
-    
+          <BottomTabAdmin focussedIndex={3} />
+        </NativeBaseProvider>
+      </ImageBackground></KeyboardAvoidingView>
+
   );
 }
 
@@ -188,20 +262,20 @@ const styles = StyleSheet.create({
   },
 
   button: {
-   // flex:1,
-    flexDirection:'row',
+    // flex:1,
+    flexDirection: 'row',
     top: 76,
     left: -80
     ,
     width: 100,
     height: 35,
     borderRadius: 20, // Half of width/height for a round button
-    borderWidth:1,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   buttonText: {
-    color: 'white',
+    color: 'black',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -211,16 +285,17 @@ const styles = StyleSheet.create({
     //resizeMode: 'contain',
     //marginVertical: 5,
   },
-    roundedBox: {
-      position: 'absolute', // Change the position to absolute
-      top: 180,
-      bottom: 230,
-      width: 350, // Adjust the width as needed
-      height: 450, // Adjust the height as needed
-      backgroundColor: '#D4CAFF', // Background color of the box
-      borderRadius: 30, // Adjust the borderRadius to control the roundness
-      justifyContent: 'center', // Center content vertically
-      alignItems: 'center', // Center content horizontally
+  roundedBox: {
+    position: 'absolute', // Change the position to absolute
+    top: 180,
+    bottom: 230,
+    width: 350, // Adjust the width as needed
+    height: 450, // Adjust the height as needed
+    backgroundColor: 'transparent', // Background color of the box
+    borderWidth: 1,
+    borderRadius: 30, // Adjust the borderRadius to control the roundness
+    justifyContent: 'center', // Center content vertically
+    alignItems: 'center', // Center content horizontally
   },
 
   fields: {
@@ -229,11 +304,11 @@ const styles = StyleSheet.create({
     bottom: 380,
     left: 15,
     right: 30,
-    textAlign:'Center',
+    textAlign: 'Center',
     width: 320, // Adjust the width as needed
     height: 70, // Adjust the height as needed
-   // backgroundColor: 'black', // Background color of the box
-   borderColor: 'black', // Border color
+    // backgroundColor: 'black', // Background color of the box
+    borderColor: 'black', // Border color
     borderWidth: 1, // Border width
     borderRadius: 5, // Adjust the borderRadius to control the roundness
     justifyContent: 'center', // Center content vertically
@@ -247,6 +322,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 10,
   },
-   
+
 
 });

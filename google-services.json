@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "456812333842",
+    "project_id": "jiitcafemaster",
+    "storage_bucket": "jiitcafemaster.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:456812333842:android:2858189a4bffb0d90641cb",
+        "android_client_info": {
+          "package_name": "com.praveenrajpurak.japp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDbtB_mbSnPzxRKAY1ZyeOtTDvl-t0VHX8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

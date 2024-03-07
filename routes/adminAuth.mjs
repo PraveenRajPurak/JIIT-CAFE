@@ -4,6 +4,10 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import Admin from '../models/admins.mjs';
 import Stock from '../models/stock.mjs';
+import User from '../models/users.mjs';
+import PendingOrders from '../models/pendingOrders.mjs';
+import CompletedOrders from '../models/successfulOrders.mjs';
+import FailedOrders from '../models/failedOrders.mjs';
 
 const router = express.Router();
 
@@ -117,6 +121,171 @@ router.post('/deleteStock', async (req, res) => {
 });
 
 
+router.post('/userDetails', async (req, res) => {
+  const enrollmentNo = req.body.enrollmentNo;
+  console.log('enrollmentNo:', enrollmentNo);
 
+  try {
+    // Fetch user details based on the user ID
+    const user = await User.findOne({ enrollmentNo: enrollmentNo });
+
+    if (user) {
+      // Send user details as the response
+      res.status(200).json({
+        enrollmentNo: user.enrollmentNo,
+        name: user.name,
+        jCoins: user.jCoins,
+      });
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+router.post('/rechargeJCoins', async (req, res) => {
+  const { enrollmentNo, amount } = req.body;
+
+  try {
+    // Fetch user details based on the user ID
+    const user = await User.findOne({ enrollmentNo: enrollmentNo });
+
+    if (user) {
+      const oldJcoins = user.jCoins;
+      const updatedUser = await User.findOneAndUpdate(
+        { enrollmentNo: enrollmentNo }, // Criteria for finding the document
+        { $set: { jCoins: oldJcoins + amount } }, // Update operation
+        { new: true }
+      );
+
+      res.status(200).json({
+        enrollmentNo: updatedUser.enrollmentNo,
+        name: updatedUser.name,
+        jCoins: updatedUser.jCoins,
+      });
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  } catch (error) {
+    console.error('Error recharging JCoins:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+router.get('/fetchPendingOrders', async (req, res) => {
+  try {
+    const pendingOrders = await PendingOrders.find({}, '_id orderId orderDate orderTime orderedBy items');
+
+    if (pendingOrders) {
+      // Convert date strings to Date objects for proper sorting
+      const sortedOrders = pendingOrders.map(order => {
+        return {
+          _id: order._id,
+          orderId: order.orderId,
+          orderDate: new Date(order.orderDate),
+          orderTime: order.orderTime,
+          orderedBy: order.orderedBy,
+          items: order.items,
+        };
+      });
+
+      // Sort the orders based on orderDate and orderTime
+      sortedOrders.sort((a, b) => b.orderDate - a.orderDate || a.orderTime.localeCompare(b.orderTime));
+
+      res.status(200).json(sortedOrders);
+    } else {
+      res.status(404).json({ error: 'No pending orders found' });
+    }
+  } catch (error) {
+    console.error('Error fetching pending orders:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+router.post('/completeOrder', async (req, res) => {
+  console.log('Received request at /completeOrder');
+  const { orderId } = req.body;
+  const {orderedBy} = req.body;
+  console.log('Order ID:', orderId);
+  console.log('Ordered By:', orderedBy);
+
+  try {
+    
+    const user = await User.findOne({ enrollmentNo : orderedBy });
+
+    const pendingOrder = await PendingOrders.findOne({ orderId : orderId });
+
+    // Find the order in user's pendingOrders array based on orderId
+    const userPendingOrderIndex = user.pendingOrders.findIndex(order => order.orderId === orderId);
+
+    if (userPendingOrderIndex === -1) {
+      return res.status(404).json({ error: 'Order not found in user\'s pending orders' });
+    }
+    
+    // Get the pending order
+    const userPendingOrder = user.pendingOrders[userPendingOrderIndex];
+
+    if (!pendingOrder) {
+      return res.status(404).json({ error: 'Order not found in Pending Orders' });
+    }
+
+    // Move order to CompletedOrders collection
+    const completedOrder = new CompletedOrders({
+      orderId: pendingOrder.orderId,
+      orderDate: pendingOrder.orderDate,
+      orderTime: pendingOrder.orderTime,
+      orderedBy: pendingOrder.orderedBy,
+      items: pendingOrder.items,
+    });
+
+    await completedOrder.save();
+
+    user.successfulOrders.push(userPendingOrder);
+    user.pendingOrders.splice(userPendingOrderIndex, 1);
+
+    await PendingOrders.deleteOne({ orderId });
+
+    await user.save();
+
+    res.status(200).json({ message: 'Order completed successfully' });
+  } catch (error) {
+    console.error('Error completing order:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.get('/successfulOrdersFetch', async (req, res) => {
+  console.log('Received request at /successfulOrdersFetch');
+  try {
+    const orders = await CompletedOrders.find({}, '_id orderId orderDate orderTime orderedBy items');
+    console.log('Orders:', orders);
+
+    res.json(orders);
+
+  } catch (error) {
+    console.error('Error fetching successful orders:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+router.get('/failedOrdersFetch', async (req, res) => {
+  console.log('Received request at /failedOrdersFetch');
+  try {
+    const orders = await FailedOrders.find({}, '_id orderId orderDate orderTime orderedBy items');
+    console.log('Orders:', orders);
+
+    res.json(orders);
+
+  } catch (error) {
+    console.error('Error fetching failed orders:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 export default router;

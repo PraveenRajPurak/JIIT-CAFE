@@ -36,11 +36,11 @@ export function Tokentop({ focussedIndex }) {
               flex: 1,
               alignItems: 'center',
               height: 50,
-              backgroundColor: index === i ? '#C70039' : '#FF6969',
+              backgroundColor: index === i ? '#FBA834' : '#FDBF60',
               justifyContent: 'center',
             }}
           >
-            <Text color="#FFFFFF">{route.title}</Text>
+            <Text color="black">{route.title}</Text>
           </Pressable>
         ))}
       </Box>
@@ -63,11 +63,11 @@ export function Tokentop({ focussedIndex }) {
 
   return (
     <TabView
-      navigationState={{ index, routes: [
-        { key: 'first', title: 'Current', navigTo: 'ordersAdmin' },
-        { key: 'second', title: 'Used', navigTo: 'orders2' },
-        { key: 'third', title: 'Unused', navigTo: 'orders3' },
-      ]}}
+    navigationState={{ index, routes: [
+      { key: 'first', title: 'Current', navigTo: 'currentAdminOrders' },
+      { key: 'second', title: 'Used', navigTo: 'usedAdminOrders' },
+      { key: 'third', title: 'Unused', navigTo: 'unusedAdminOrders' },
+    ]}}
       renderTabBar={renderTabBar}
       renderScene={renderScene}
       onIndexChange={setIndex}

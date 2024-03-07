@@ -34,12 +34,12 @@ export default function OtpforSignup() {
       //check if user already exists or not
       const userDocument = await firestore().collection('users').doc(user.uid).get();
       if (userDocument.exists) {
-        navigation.navigate("LoginCopy");
+        navigation.navigate("login");
       }
 
       else {
-       // console.log("UID before navigating:", user.uid);
-        navigation.navigate("signup", {uid:user.uid});
+        // console.log("UID before navigating:", user.uid);
+        navigation.navigate("signup", { uid: user.uid });
       }
 
     }
@@ -100,23 +100,19 @@ export default function OtpforSignup() {
     >
 
       <ImageBackground source={require('./jiitcafeassests/otpbg.png')} style={styles.container} keyboardShouldPersistTaps='always'>
-        
-
 
         <View style={styles.roundedBox} keyboardShouldPersistTaps='always'>
 
           <Image source={require('./jiitcafeassests/logosmall.png')} style={{ width: 180, height: 100, position: 'absolute', top: 13 }} />
 
-        
-
           {!confirm ? (
             <>
               <Text style={{ fontSize: 23, fontWeight: 'bold', top: -30, color: 'black' }}>
-            Sign Up With Phone Number
-          </Text>
-              <View style={[styles.fields, { bottom: 132, right: 30, borderRadius:30,}]} overflow='hidden' >
-                
-                <TextInput style={{ color: 'black', fontSize: 16, opacity: 1, fontWeight: '500',textAlign:'center' }}
+                Sign Up With Phone Number
+              </Text>
+              <View style={[styles.fields, { bottom: 132, right: 30, borderRadius: 30, }]} overflow='hidden' >
+
+                <TextInput style={{ color: 'black', fontSize: 16, opacity: 1, fontWeight: '500', textAlign: 'center' }}
                   keyboardType="string"
                   placeholder='Phone Number with +91'
                   placeholderTextColor='black'
@@ -133,15 +129,15 @@ export default function OtpforSignup() {
                 <Text style={{ color: 'black', alignItems: 'center', fontSize: 20 }} >Proceed</Text>
               </TouchableOpacity>
 
-              <Text style={{ position: 'absolute', bottom: 5,fontWeight:'bold',fontSize:17 }}>
-              Already have an account? <Text style={{ color: 'blue', }} onPress={() => navigation.navigate('LoginCopy')}>Sign in</Text>
-            </Text>
+              <Text style={{ position: 'absolute', bottom: 5, fontWeight: 'bold', fontSize: 17 }}>
+                Already have an account? <Text style={{ color: 'blue', }} onPress={() => navigation.navigate('login')}>Sign in</Text>
+              </Text>
             </>
           ) : (
             <>
-            <Text style={{ fontSize: 23, fontWeight: 'bold', top: -30, color: 'black' }}>
-            Otp verification
-          </Text>
+              <Text style={{ fontSize: 23, fontWeight: 'bold', top: -30, color: 'black' }}>
+                Otp verification
+              </Text>
               <View style={[styles.fields, { bottom: 132, right: 30, }]} overflow='hidden' >
                 <TextInput style={{ color: 'black', fontSize: 18, opacity: 1, fontWeight: '500' }}
                   keyboardType="string"

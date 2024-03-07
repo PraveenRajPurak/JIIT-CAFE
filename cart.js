@@ -14,14 +14,20 @@ import { SwipeRow } from 'native-base';
 import SwipeValueBasedUi from './components/swipeList.js';
 import { useUser } from './userContext';
 import { fetchUserDetails } from './fetchApi.js';
+import OrderPopup from './OrderPopup.js';
 
 export default function Cart({ navigation }) {
+
+  const [isOrderPlacedPopupVisible, setOrderPlacedPopupVisible] = useState(false);
+
   const screenWidth = Dimensions.get('window').width;
   const screenLength = Dimensions.get('window').height;
 
-  const { userData } = useUser();
+  const { userData } = useUser() || {};
+  const { token } = useUser() || {};
 
   const { selectedItems, removeItemFromCart, cardData } = useSelectedItems();
+
   const totalJcoins = selectedItems.reduce((total, item) => {
     return total + (item.count * item.coinCount);
   }, 0);
@@ -33,11 +39,12 @@ export default function Cart({ navigation }) {
   const fetchUserData = async (userData) => {
     const userDetailsData = await fetchUserDetails(userData);
     setUserDetails(userDetailsData);
-  };
+    };
+      
+    useEffect(() => {
+      fetchUserData(userData);
+    }, []);
 
-  useEffect(() => {
-    fetchUserData(userData);
-  }, []);
   const [isAccountBoxVisible, setIsAccountBoxVisible] = useState(false);
 
   // Function to toggle the visibility of the account box
@@ -51,8 +58,15 @@ export default function Cart({ navigation }) {
 
     const { token } = userData;
 
+    const {jCoins} = userDetails;
+      console.log('jCoins:', jCoins);
+      const totalOrderJCoins = totalJcoins;
+      console.log('totalOrderJCoins:', totalOrderJCoins);
+
+
+    if(jCoins >= totalOrderJCoins){
     try {
-      const response = await fetch('http://192.168.1.11:3000/auth/placeorder', {
+      const response = await fetch('http://192.168.177.64:3000/auth/placeorder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,14 +80,20 @@ export default function Cart({ navigation }) {
       console.log('API Response:', response);
       console.log(userData);
 
-      // After successfully placing the order, navigate to 'ordersUser'
-      navigation.navigate('ordersUser', { showTokenPopup: true });
+      setOrderPlacedPopupVisible(true);
+
+      setTimeout(() => {
+        setOrderPlacedPopupVisible(false);
+        navigation.navigate('ordersUser', { showTokenPopup: true });
+      }, 3000);
     } catch (error) {
       console.error('Error placing order:', error);
       // Handle error (e.g., show a message to the user)
+    }}
+    else{
+      console.log("Insufficient JCoins");
     }
   };
-
 
   return (
     <KeyboardAvoidingView
@@ -82,7 +102,9 @@ export default function Cart({ navigation }) {
       keyboardShouldPersistTaps='always' // This should handle taps outside TextInput
       keyboardVerticalOffset={-500}
     >
-
+      {isOrderPlacedPopupVisible && (
+        <OrderPopup isVisible={isOrderPlacedPopupVisible} onClose={() => setOrderPlacedPopupVisible(false)} />
+      )}
       <ImageBackground source={require('./jiitcafeassests/mainbg.png')} style={{ flex: 1 }}>
 
         <SafeAreaView style={styles.container} keyboardShouldPersistTaps='always'>
@@ -99,26 +121,26 @@ export default function Cart({ navigation }) {
           {
             selectedItems.length === 0 ? (
               <View>
-                
+
                 <Center>
 
-                <View style={[styles.fields, { top:-144, right: 35, width: 100, height: 40, backgroundColor: 'transparent', borderColor: 'black', borderWidth: 1, flexDirection: 'row' }]} overflow='hidden' >
-                  <Image
-                    source={require('./jiitcafeassests/jcoins.png')}
-                    style={{ width: 30, height: 30, }} // Adjust the dimensions as needed
-                  />
-                  {userDetails ? (
-                    <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{userDetails.jCoins}</Text>
-                  ) : (
-                    <Text style={{ fontSize: 20, fontWeight: 'bold' }}> 0</Text>
-                  )}
-                </View>
-                <TouchableOpacity onPress={toggleAccountBox} style={{ zIndex: 1 }}>
-                  <Image
-                    source={require('./jiitcafeassests/account.png')}
-                    style={{ width: 38.4, height: 38.4, position: 'absolute', top: -143, right: -170 }} // Adjust the dimensions as needed
-                  />
-                </TouchableOpacity>
+                  <View style={[styles.fields, { top: -144, right: 35, width: 100, height: 40, backgroundColor: 'transparent', borderColor: 'black', borderWidth: 1, flexDirection: 'row' }]} overflow='hidden' >
+                    <Image
+                      source={require('./jiitcafeassests/jcoins.png')}
+                      style={{ width: 30, height: 30, }} // Adjust the dimensions as needed
+                    />
+                    {userDetails ? (
+                      <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{userDetails.jCoins}</Text>
+                    ) : (
+                      <Text style={{ fontSize: 20, fontWeight: 'bold' }}> 0</Text>
+                    )}
+                  </View>
+                  <TouchableOpacity onPress={toggleAccountBox} style={{ zIndex: 1 }}>
+                    <Image
+                      source={require('./jiitcafeassests/account.png')}
+                      style={{ width: 38.4, height: 38.4, position: 'absolute', top: -143, right: -170 }} // Adjust the dimensions as needed
+                    />
+                  </TouchableOpacity>
                   <Image
                     source={require('./jiitcafeassests/nofood.png')}
                     style={{ width: 300, height: 200, position: 'absolute', top: 150, right: 10 }}
@@ -177,7 +199,6 @@ export default function Cart({ navigation }) {
                       >
                         <Text style={{ color: 'white', alignItems: 'center', fontSize: 23, fontWeight: 'bold', }} >Place Order</Text>
                       </TouchableOpacity>
-
                     </>
                   )}
 
@@ -186,6 +207,7 @@ export default function Cart({ navigation }) {
               </View>
             )
           }
+
 
 
           <StatusBar style="auto" />
@@ -199,7 +221,7 @@ export default function Cart({ navigation }) {
         {isAccountBoxVisible && (
           <View style={styles.accountBox}>
             <Button onPress={() => {
-              navigation.navigate('LoginCopy');
+              navigation.navigate('login');
             }} title='logout' color={'black'}
             >
             </Button>

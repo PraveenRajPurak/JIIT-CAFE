@@ -1,175 +1,174 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, ScrollView, TouchableOpacity } from 'react-native';
-import { StyleSheet, Text, View, SafeAreaView, Image, TextInput } from 'react-native';
+import { KeyboardAvoidingView, ImageBackground, StyleSheet, Text, View, Image, TextInput, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabAdmin } from './components/bottomTabAdmin.js';
-
+import { NativeBaseProvider } from 'native-base';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Recharge() {
-
   function truncateText(text, maxLength) {
-        if (text.length > maxLength) {
-           return text.substring(0, maxLength) ;
-         }
-         return text;
+    if (text.length > maxLength) {
+      return text.substring(0, maxLength);
+    }
+    return text;
   }
- 
 
   const navigation = useNavigation();
-
-  const [enrollmentNo, getEnrollmentNo] = useState('');
-  const [password, getPassword] = useState('');
-
+  const [enrollmentNo, setEnrollmentNo] = useState('');
 
   const enrollmentNum = (newText) => {
     newText = truncateText(newText, 10);
-    getEnrollmentNo(newText);
+    setEnrollmentNo(newText);
   };
-
-  const passWord = (newText) => {
-    newText = truncateText(newText, 20);
-    getPassword(newText);
-  };
-
 
   const handleRecharge = async () => {
     try {
-      // Make a request to check if the user exists
-      const response = await fetch(`http://192.168.1.11:3000/auth/checkUser/${enrollmentNo}`, {
-        method: 'GET',
+      const response = await fetch('http://192.168.177.64:3000/adminAuth/userDetails', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          enrollmentNo: enrollmentNo,
+        }),
       });
-      console.log('API Response:', response);
-      const userData = await response.json();
-
+  
       if (response.ok) {
-        // User exists, proceed with recharge
-        navigation.navigate('rechargeMain', { enrollmentNo });
+        const userData = await response.json();
+        console.log('User Details:', userData);
+        navigation.navigate('rechargeMain', { userData });
+  
       } else {
-        // User doesn't exist, show a pop-up or alert
-        Alert.alert('User Not Found', 'The user with the provided enrollment number does not exist.');
+        console.log('Error from server:', response.status);
       }
     } catch (error) {
-      console.error('Error checking user:', error);
-      // Handle other errors as needed
+      console.error('Error fetching user details:', error);
     }
   };
   
-
-
   return (
     <KeyboardAvoidingView
-    style={{ flex: 1 }}
-    behavior='height'
-    keyboardShouldPersistTaps='always' // handle taps outside TextInput
-    keyboardVerticalOffset={-500}
+      style={{ flex: 1 }}
+      behavior='height'
+      keyboardShouldPersistTaps='always'
+      keyboardVerticalOffset={-500}
     >
-    
-    <SafeAreaView style={styles.container} keyboardShouldPersistTaps='always'>
-    <Image
-            source={require('./jiitcafeassests/cafelogo.png')} 
-            style={{ width: 60, height: 60, position:'absolute', top: 35, left: 10 }} // Adjust the dimensions as needed
-        />
-        
-          <Text style={{fontSize: 19, fontWeight: 'bold', position:'absolute', textAlign: 'left', left:74 ,top:55, color: 'black'}}>
-            JIIT CAFE</Text>
-
-       <View style={styles.roundedBox} keyboardShouldPersistTaps='always'>
-
-            <Image
-                source={require('./icons/id-card.png')} 
-                style={{ width: 40, height: 40, position:'absolute', top: 65, left: 15 }}
-            /> 
-            <View style={[styles.fields, {bottom:200, right: 30,top: 62}]} overflow = 'hidden' >
-              <TextInput style={{color: 'white', right: 60, }}
-                         keyboardType="numeric"
-                         placeholder='Enrollment No.' 
-                         placeholderTextColor= 'white' 
-                         onChangeText={enrollmentNum} 
-                         value={enrollmentNo} />
+      <ImageBackground source={require('./jiitcafeassests/mainbg.png')} style={styles.backgroundImage}>
+        <SafeAreaView>
+        <View style={styles.container}>
+          <Image
+            source={require('./jiitcafeassests/cafelogo.png')}
+            style={styles.logo}
+          />
+          <Text style={styles.cafeTitle}>JIIT CAFE</Text>
+          <View style={styles.roundedBox}>
+            <Text style={styles.rechargeTitle}>Recharge</Text>
+            <View style={styles.fields}>
+              <TextInput
+                style={styles.input}
+                keyboardType="numeric"
+                placeholder="Enrollment Number"
+                placeholderTextColor='black'
+                onChangeText={enrollmentNum}
+                value={enrollmentNo}
+              />
             </View>
-            
-                <TouchableOpacity 
-                       style={[styles.roundedBox, 
-                       {width: 200, height:60, backgroundColor:'black',bottom:30,top: 125}]} 
-                       onPress={navigation.navigate('rechargeMain')}
-                >
-                    
-                <Text style={{color: 'white', alignItems:'center', fontSize: 20 }} >Proceed</Text>
-
-                </TouchableOpacity>
-
-            <Image
-                 source={require('./icons/profile.png')} 
-                 style={{ width: 80, height: 80, position:'absolute', top: -40, left: 135 }} 
-            /> 
-
+            <View style={styles.proceedButtonContainer}>
+              <TouchableOpacity
+                style={styles.proceedButton}
+                onPress={handleRecharge}
+              >
+                <Text style={styles.buttonText}>Proceed</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-    <StatusBar style="auto" />
-    <BottomTabAdmin focussedIndex={4} />
-    </SafeAreaView></KeyboardAvoidingView>
-    
+        <StatusBar style="auto" />
+        </SafeAreaView>
+        <NativeBaseProvider>
+          <BottomTabAdmin focussedIndex={3} />
+        </NativeBaseProvider>
+        
+      </ImageBackground>
+    </KeyboardAvoidingView>
   );
 }
 
-
 const styles = StyleSheet.create({
-
-  container: {
+  backgroundImage: {
     flex: 1,
-    alignItems: 'center', // Center horizontally
-    justifyContent: 'center', // Center vertically
+    resizeMode: 'cover',
+    justifyContent: 'center',
   },
-
-  curvedLine: {
-    position: 'absolute',
+  container: {
+   // flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    top: 35,
+    width: 100,
+    height: 100,
+  },
+  cafeTitle: {
+    top: 35,
+    fontSize: 25,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: 'black',
+    marginTop: 5,
+  },
+  roundedBox: {
+    
     top: 50,
-    width: '89%',
-    height: '3%',
-    borderTopWidth: 2.5,
-    borderRightWidth: 0.1,
-    borderLeftWidth: 0.1,
-    borderRadius: 20,
-    borderTopColor: 'black',
-    borderRightColor: 'white',
-    borderLeftColor: 'white',
-  },
-
-  
-    roundedBox: {
-      position: 'absolute',
-      top: 300,
-      bottom: 230,
-      width: 350, 
-      height: 200, 
-      backgroundColor: 'aqua', 
-      borderRadius: 30, 
-      justifyContent: 'center', // Center content vertically
-      alignItems: 'center', // Center content horizontally
-  },
-
-  fields: {
-    position: 'absolute', 
-    bottom: 380,
-    right: 30,
-    width: 250, 
-    height: 40, 
-    backgroundColor: 'black', // Background color of the box
-    borderRadius: 10, // Adjust the borderRadius to control the roundness
-    justifyContent: 'center', // Center content vertically
-    alignItems: 'center', // Center content horizontally
-  },
-
-  input: {
-    width: 300,
-    height: 40,
-    borderColor: 'gray',
+    width: '85%',
+    backgroundColor: 'transparent',
     borderWidth: 1,
-    padding: 10,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
-
-
+  rechargeTitle: {
+    color: 'black',
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  fields: {
+    width: '100%',
+    height: 50,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'black',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  input: {
+    color: 'black',
+    fontSize: 18,
+    width: '80%',
+  },
+  proceedButtonContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  proceedButton: {
+    width: 220,
+    height: 60,
+    backgroundColor: '#FF8911',
+    borderWidth: 1,
+    borderColor: 'black',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'black',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
 });

@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from 'react';
-import { KeyboardAvoidingView, ImageBackground, ScrollView,Button, TouchableOpacity } from 'react-native';
+import { KeyboardAvoidingView, ImageBackground, ScrollView, Button, TouchableOpacity } from 'react-native';
 import { StyleSheet, Text, View, SafeAreaView, Image, TextInput, Flex } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Cards } from './components/cards.js';
@@ -8,22 +8,29 @@ import { NativeBaseProvider, Box, Center } from "native-base";
 import { FlatList } from 'react-native';
 import { BottomTabUser } from './components/bottomTabUser.js';
 import { fetchUserDetails } from './fetchApi.js';
+import { useUser } from './userContext.js';
 
 export default function Wallet() {
+
+  const { userData } = useUser() || {};
+  const { token } = useUser() || {};
 
   const navigation = useNavigation();
   // State to store user details
   const [userDetails, setUserDetails] = useState(null);
 
   // Fetch user details when the component mounts
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const userDetailsData = await fetchUserDetails();
-      setUserDetails(userDetailsData);
-    };
+  const fetchUserData = async () => {
+    const userDetailsData = await fetchUserDetails(userData);
+    console.log('User Details:', userDetailsData);
+    setUserDetails(userDetailsData);
+  };
 
-    fetchUserData();
-  }, []);
+  useEffect(() => {
+    if (userData) {
+      fetchUserData();
+    }
+  }, [userData]);
 
   const [isAccountBoxVisible, setIsAccountBoxVisible] = useState(false);
 
@@ -56,11 +63,12 @@ export default function Wallet() {
               style={{ width: 30, height: 30, }} // Adjust the dimensions as needed
             />
             {userDetails ? (
-              <Text style={{ fontSize: 30, fontWeight: 'bold' }}>{userDetails.jCoins}</Text>
+              <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{userDetails.jCoins}</Text>
             ) : (
               <Text style={{ fontSize: 20, fontWeight: 'bold' }}> 0</Text>
             )}
           </View>
+
           <TouchableOpacity onPress={toggleAccountBox} style={{ zIndex: 0 }}>
             <Image
               source={require('./jiitcafeassests/account.png')}
@@ -68,12 +76,16 @@ export default function Wallet() {
             />
           </TouchableOpacity>
 
-          <View style={[styles.fields, { bottom: 160, right: 70, width: 250, height: 100, backgroundColor: '#FFA732', borderColor: 'black', borderWidth: 0, flexDirection: 'row',alignItems:'center',elevation: 8 }]} overflow='hidden' >
+          <View style={[styles.fields, { bottom: 160, right: 70, width: 250, height: 100, backgroundColor: '#FFA732', borderColor: 'black', borderWidth: 0, flexDirection: 'row', alignItems: 'center', elevation: 8 }]} overflow='hidden' >
             <Image
               source={require('./jiitcafeassests/jcoins.png')}
               style={{ width: 40, height: 40, }} // Adjust the dimensions as needed
             />
-            <Text style={{ fontSize: 30,fontWeight:'bold' }} > 100</Text>
+            {userDetails ? (
+              <Text style={{ fontSize: 30, fontWeight: 'bold' }}>{userDetails.jCoins}</Text>
+            ) : (
+              <Text style={{ fontSize: 30, fontWeight: 'bold' }}> 0</Text>
+            )}
           </View>
 
           <Image
@@ -84,10 +96,11 @@ export default function Wallet() {
           <Text style={{ fontSize: 20, fontWeight: 'bold', top: 375 }}>No Receipts</Text>
           <Text style={{ fontSize: 15, fontWeight: '300', padding: 10, textAlign: 'center', top: 378 }}>Your transaction receipts will appear here</Text>
 
+
           <StatusBar style="auto" />
 
         </SafeAreaView>
-
+       
         <NativeBaseProvider>
           <BottomTabUser focussedIndex={2} />
         </NativeBaseProvider>
@@ -95,7 +108,7 @@ export default function Wallet() {
         {isAccountBoxVisible && (
           <View style={styles.accountBox}>
             <Button onPress={() => {
-              navigation.navigate('logincopy');
+              navigation.navigate('login');
             }} title='logout' color={'black'}
             >
             </Button>

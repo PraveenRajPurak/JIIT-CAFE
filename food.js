@@ -12,14 +12,18 @@ import { reduce } from 'lodash';
 import { useSelectedItems } from './SelectedItemsContext.js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchUserDetails } from './fetchApi.js';
-//import { useStateContext } from './CartValueContext.js';
+import { useUser } from './userContext';
+
 
 export default function Food() {
   const navigation = useNavigation();
 
+  const { userData } = useUser() || {};
+  const { token } = useUser() || {};
+
   const { selectedItems, setSelectedItems, cardData, addOrUpdateItemInCart } = useSelectedItems();
   const [prevCost, setNewTotalCost] = useState(0);
- // const [totalCost, setTotalCost] = useStateContext(0);
+  // const [totalCost, setTotalCost] = useStateContext(0);
   const [selectedItemCounts, setSelectedItemCounts] = useState({});
   const totalCount = reduce(selectedItems, (sum, item) => sum + item.count, 0);
   const flatListRef = useRef(); // Reference to the FlatList component
@@ -27,17 +31,18 @@ export default function Food() {
 
   // State to store user details
   const [userDetails, setUserDetails] = useState(null);
- 
-  //const [hello,setHello] = useState('Hello there. Params test successfully passed!');
-  // Fetch user details when the component mounts
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const userDetailsData = await fetchUserDetails();
-      setUserDetails(userDetailsData);
-    };
 
-    fetchUserData();
-  }, []);
+  //const [hello,setHello] = useState('Hello there. Params test successfully passed!');
+  const fetchUserData = async () => {
+    const userDetailsData = await fetchUserDetails(userData);
+    setUserDetails(userDetailsData);
+  };
+
+  useEffect(() => {
+    if (userData) {
+      fetchUserData();
+    }
+  }, [userData]);
 
 
   // Handle card press to add items to the cart
@@ -67,10 +72,10 @@ export default function Food() {
     // Update the item information with the count
     const updatedItem = { ...selectedItem, count: newCount };
 
-    
+
     // Update the Jcoin count
     setNewTotalCost(prevCost => prevCost + coinChange);
-    
+
     // Update the item counters based on the change
     const updatedCounts = { ...selectedItemCounts };
 
@@ -97,13 +102,6 @@ export default function Food() {
       const count = updatedCounts[item.id] || 0;
       item.count = count;
     });
-
-    if (newCount > prevCount) {
-      const index = cardData.findIndex((item) => item.id === itemId);
-      if (index >= 0 && flatListRef.current) {
-        flatListRef.current.scrollToIndex({ index });
-      }
-    }
 
     console.log('Selected Items:', selectedItems);
   };
@@ -138,19 +136,6 @@ export default function Food() {
     searchItem(newText);
   };
 
-
-
-
-  /*const cardData = [
-    { id: '1', imageUrl: require('./jiitcafeassests/Indian-samosa-chutney.webp'), dishName: 'Samosa', coinCount: 10 },
-    { id: '2', imageUrl: require('./jiitcafeassests/pasta.png'), dishName: 'Pasta', coinCount: 20 },
-    { id: '3', imageUrl: require('./jiitcafeassests/patties.png'), dishName: 'Patty', coinCount: 10 },
-    { id: '4', imageUrl: require('./jiitcafeassests/noodles.png'), dishName: 'Noodles', coinCount: 20 },
-    { id: '5', imageUrl: require('./jiitcafeassests/burger.png'), dishName: 'Burger', coinCount: 30 },
-    { id: '6', imageUrl: require('./jiitcafeassests/hotdog.png'), dishName: 'Hotdog', coinCount: 20 },
-    { id: '7', imageUrl: require('./jiitcafeassests/coffee.png'), dishName: 'Coffee', coinCount: 10 },
-    // Add more card data as needed
-  ];*/
 
   const renderCard = ({ item }) => (
     <Cards imageUrl={item.imageUrl} id={item.id} dishName={item.dishName} price={item.price} coinCount={item.coinCount} onCountChange={(id, newCount, prevCount) => handleCountChange(item.id, newCount, prevCount)} count={item.count} />
@@ -225,7 +210,7 @@ export default function Food() {
               data={cardData}
               renderItem={renderCard}
               keyExtractor={(item) => item.id}
-              initialNumToRender={10}
+              initialNumToRender={0}
               getItemLayout={(data, index) => ({
                 length: 400, // Replace with the actual height of your items
                 offset: 400 * index,
@@ -239,14 +224,14 @@ export default function Food() {
         {/* Conditional rendering of the box */}
         {selectedItems.length > 0 && (
           <View style={styles.orderSummaryBox}>
-            <Text style={{ fontSize: 16, fontWeight: 'bold' ,left: 14}}>
-             {totalCount} Items Added
+            <Text style={{ fontSize: 16, fontWeight: 'bold', left: 14 }}>
+              {totalCount} Items Added
             </Text>
-            
+
             <TouchableOpacity
               onPress={() => {
-                  navigation.navigate('cart');
-                }
+                navigation.navigate('cart');
+              }
               }
               style={styles.button}
             >
@@ -259,7 +244,7 @@ export default function Food() {
         {isAccountBoxVisible && (
           <View style={styles.accountBox}>
             <Button onPress={() => {
-              navigation.navigate('logincopy');
+              navigation.navigate('login');
             }} title='logout' color={'black'}
             >
             </Button>

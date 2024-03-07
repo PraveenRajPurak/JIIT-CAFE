@@ -3,16 +3,16 @@ import React, { useState } from 'react';
 import { Alert,KeyboardAvoidingView, ScrollView, TouchableOpacity, ImageBackground } from 'react-native';
 import { StyleSheet, Text, View, SafeAreaView, Image, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-//import { useRoute } from '@react-navigation/native';
-//import firestore from '@react-native-firebase/firestore';
+import { useRoute } from '@react-navigation/native';
+import firestore from '@react-native-firebase/firestore';
 
 export default function Signup({ route }) {
 
  const navigation = useNavigation();
 
- //const route = useRoute();
+// const route = useRoute();
 
- //const { uid } = route.params;
+ const { uid } = route.params;
 
   function truncateText(text, maxLength) {
     if (text.length > maxLength) {
@@ -45,12 +45,13 @@ export default function Signup({ route }) {
     newText = truncateText(newText, 20);
     setConfirmPassword(newText);
   };
-/*
+
   const saveDetails = async () => {
     try {
       await firestore().collection('users').doc(uid).set({
         name,
         enrollmentNo,
+        password,
       });
 
     }
@@ -58,10 +59,10 @@ export default function Signup({ route }) {
       console.log("Error in Saving Details : ", error);
     }
   };
-*/
+
   const handleSignUp = async () => {
     try {
-      const response = await fetch('http://192.168.1.11:3000/auth/signup', {
+      const response = await fetch('http://192.168.177.64:3000/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -94,7 +95,7 @@ export default function Signup({ route }) {
       keyboardShouldPersistTaps='always' // This should handle taps outside TextInput
       keyboardVerticalOffset={-500}
     >
-      <ImageBackground source={require('./jiitcafeassests/mainbg.png')} style={{ flex: 1 }}>
+      <ImageBackground source={require('./jiitcafeassests/loginbg.png')} style={{ flex: 1 }}>
         <SafeAreaView style={styles.container} keyboardShouldPersistTaps='always'>
           <Image
             source={require('./jiitcafeassests/cafelogo.png')}
@@ -163,7 +164,7 @@ export default function Signup({ route }) {
             <TouchableOpacity
               style={[styles.roundedBox,
               { width: 200, height: 60, backgroundColor: 'transparent',borderWidth:0.75, borderColor:'black', borderRadius: 30, bottom: 40 }]}
-              onPress={handleSignUp}>
+              onPress={Signupbutton}>
 
               <Text style={{ color: 'black', alignItems: 'center', fontSize: 24,fontWeight:'bold' }} >Sign up</Text>
 

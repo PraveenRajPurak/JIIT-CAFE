@@ -31,7 +31,6 @@ const OrderBox = ({ order, currentTimestamp }) => {
     }
   }, [order, currentTimestamp]);
 
-
   return (
     <TouchableOpacity onPress={() => setShowDetails(!showDetails)}>
       <View style={{ borderWidth: 0.8, borderRadius: 10, borderColor: 'black', padding: 10, width: '90%', marginBottom: 5, left: 20 }}>
@@ -127,7 +126,7 @@ const MaintokenPage = ({ onClose }) => {
       const { token } = userData;
 
       // Fetch all user orders
-      const response = await fetch('http://192.168.1.11:3000/auth/alluserorders', {
+      const response = await fetch('http://192.168.177.64:3000/auth/alluserorders', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -207,8 +206,7 @@ const MaintokenPage = ({ onClose }) => {
         keyExtractor={(item) => item.orderId.toString()}
       />
       <BottomTabUser focussedIndex={1} />
-
-
+      
     </KeyboardAvoidingView>
   );
 };

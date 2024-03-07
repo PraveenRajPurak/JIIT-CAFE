@@ -68,7 +68,7 @@ export default function Admincart () {
          </SafeAreaView>
   
          <NativeBaseProvider>
-            <BottomTabAdmin focussedIndex={3} />
+            <BottomTabAdmin focussedIndex={2} />
          </NativeBaseProvider>
   
       </KeyboardAvoidingView>    

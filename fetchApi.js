@@ -1,17 +1,16 @@
 // fetchApi.mjs
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-
 export const fetchUserDetails = async (userData) => {
+
   console.log('Fetching user details:', userData);
-  const {token} = userData;
+  const token = userData.token;
+  console.log('Token:', token);
   try {
     if (!token) {
       // Token not found, handle as needed (e.g., redirect to login)
       return null;
     }
 
-    const response = await fetch('http:///192.168.1.11:3000/user/details', {
+    const response = await fetch('http://192.168.177.64:3000/user/details', {
       method: 'GET',
       headers: {
         'Authorization' : `Bearer ${token}`,
